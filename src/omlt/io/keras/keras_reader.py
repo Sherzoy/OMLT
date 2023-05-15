@@ -1,8 +1,7 @@
 import tensorflow.keras as keras
 
-from omlt.neuralnet.layer import DenseLayer, InputLayer
+from omlt.neuralnet.layer import DenseLayer, InputLayer, PReLUDenseLayer, LeakyDenseLayer
 from omlt.neuralnet.network_definition import NetworkDefinition
-
 
 def load_keras_sequential(
     nn, scaling_object=None, scaled_input_bounds=None, unscaled_input_bounds=None
@@ -44,7 +43,6 @@ def load_keras_sequential(
 
     prev_layer = InputLayer([n_inputs])
     net.add_layer(prev_layer)
-
     for l in nn.layers:
         cfg = l.get_config()
         if not isinstance(l, keras.layers.Dense):
@@ -53,18 +51,64 @@ def load_keras_sequential(
                 "only supports dense layers at this time. Consider using "
                 "ONNX and the ONNX parser".format(type(l))
             )
-        weights, biases = l.get_weights()
-        n_layer_inputs, n_layer_nodes = weights.shape
+        
+        #Configuration for Parametric ReLU and LeakyReLU
+        if(isinstance(cfg["activation"],dict)):
 
-        dense_layer = DenseLayer(
-            [n_layer_inputs],
-            [n_layer_nodes],
-            activation=cfg["activation"],
-            weights=weights,
-            biases=biases,
-        )
-        net.add_layer(dense_layer)
-        net.add_edge(prev_layer, dense_layer)
-        prev_layer = dense_layer
+            act = cfg["activation"]["class_name"]
+
+            # Configuration for Parametric ReLU
+            if(act == 'PReLU'):
+                weights, biases,alphas = l.get_weights()
+                n_layer_inputs, n_layer_nodes = weights.shape
+
+                dense_layer = PReLUDenseLayer(
+                    [n_layer_inputs],
+                    [n_layer_nodes],
+                    activation=act,
+                    weights=weights,
+                    biases=biases,
+                    alphas=alphas,
+                )
+
+                net.add_layer(dense_layer)
+                net.add_edge(prev_layer, dense_layer)
+                prev_layer = dense_layer
+            
+            # Configuration for LeakyReLU
+            else:
+                weights, biases= l.get_weights()
+                alpha = cfg["activation"]['config']['alpha']
+                n_layer_inputs, n_layer_nodes = weights.shape
+
+                dense_layer = LeakyDenseLayer(
+                    [n_layer_inputs],
+                    [n_layer_nodes],
+                    activation=act,
+                    weights=weights,
+                    biases=biases,
+                    alpha=alpha,
+                )
+
+                net.add_layer(dense_layer)
+                net.add_edge(prev_layer, dense_layer)
+                prev_layer = dense_layer
+        
+        # Configuration for everything else
+        else:
+            weights, biases = l.get_weights()
+            n_layer_inputs, n_layer_nodes = weights.shape
+            act = cfg["activation"]
+            dense_layer = DenseLayer(
+                [n_layer_inputs],
+                [n_layer_nodes],
+                activation=act,
+                weights=weights,
+                biases=biases,
+            )
+
+            net.add_layer(dense_layer)
+            net.add_edge(prev_layer, dense_layer)
+            prev_layer = dense_layer
 
     return net

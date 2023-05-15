@@ -8,6 +8,8 @@ from omlt.neuralnet.activations import (
 from omlt.neuralnet.activations import (
     ComplementarityReLUActivation,
     bigm_relu_activation_constraint,
+    bigm_leaky_relu_activation_constraint,
+    bigm_para_relu_activation_constraint,
     linear_activation_constraint,
     linear_activation_function,
     sigmoid_activation_constraint,
@@ -17,7 +19,8 @@ from omlt.neuralnet.activations import (
     tanh_activation_constraint,
     tanh_activation_function,
 )
-from omlt.neuralnet.layer import ConvLayer2D, DenseLayer, InputLayer, PoolingLayer2D
+
+from omlt.neuralnet.layer import ConvLayer2D, DenseLayer, InputLayer, PoolingLayer2D, LeakyDenseLayer, PReLUDenseLayer
 from omlt.neuralnet.layers.full_space import (
     full_space_conv2d_layer,
     full_space_dense_layer,
@@ -39,6 +42,8 @@ _DEFAULT_LAYER_CONSTRAINTS = {
     DenseLayer: full_space_dense_layer,
     ConvLayer2D: full_space_conv2d_layer,
     PoolingLayer2D: full_space_maxpool2d_layer,
+    LeakyDenseLayer: full_space_dense_layer,
+    PReLUDenseLayer : full_space_dense_layer,
 }
 
 _DEFAULT_ACTIVATION_CONSTRAINTS = {
@@ -47,6 +52,8 @@ _DEFAULT_ACTIVATION_CONSTRAINTS = {
     "sigmoid": sigmoid_activation_constraint,
     "softplus": softplus_activation_constraint,
     "tanh": tanh_activation_constraint,
+    "LeakyReLU" : bigm_leaky_relu_activation_constraint,
+    "PReLU" : bigm_para_relu_activation_constraint
 }
 
 
@@ -152,6 +159,7 @@ def _build_neural_network_formulation(
     """
     net = network_structure
     layers = list(net.layers)
+    print(layers)
 
     block.layers = pyo.Set(initialize=[id(layer) for layer in layers], ordered=True)
 
@@ -173,6 +181,7 @@ def _build_neural_network_formulation(
         return b
 
     for layer in layers:
+
         if isinstance(layer, InputLayer):
             continue
         layer_id = id(layer)
@@ -260,8 +269,10 @@ class ReluBigMFormulation(FullSpaceNNFormulation):
         return {
             "linear": linear_activation_constraint,
             "relu": bigm_relu_activation_constraint,
+            "LeakyReLU" : bigm_leaky_relu_activation_constraint,
+            "PReLU" : bigm_para_relu_activation_constraint,
         }
-
+                                                 
 
 class ReluComplementarityFormulation(FullSpaceNNFormulation):
     def __init__(self, network_structure):
@@ -281,6 +292,7 @@ class ReluComplementarityFormulation(FullSpaceNNFormulation):
         return {
             "linear": linear_activation_constraint,
             "relu": ComplementarityReLUActivation(),
+
         }
 
 

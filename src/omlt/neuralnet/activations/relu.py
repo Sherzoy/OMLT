@@ -70,6 +70,86 @@ def bigm_relu_activation_constraint(net_block, net, layer_block, layer):
             1.0 - layer_block.q_relu[output_index]
         )
 
+def bigm_leaky_relu_activation_constraint(net_block, net, layer_block, layer):
+    # instantiate
+    layer_block.qb=pyo.Var(layer.output_indexes,within=pyo.Binary)
+    layer_block.c1=pyo.Constraint(layer.output_indexes)
+    layer_block.c2=pyo.Constraint(layer.output_indexes)
+    layer_block.c3=pyo.Constraint(layer.output_indexes)
+    layer_block.c4=pyo.Constraint(layer.output_indexes)
+    
+    # Extract the value of alpha
+    a = layer.alpha
+    
+    # integrate
+    for output_index in layer.output_indexes:
+        lb,ub = layer_block.zhat[output_index].bounds
+        layer_block.z[output_index].setlb(max(a*lb,lb))
+        layer_block.z[output_index].setub(max(a*ub,ub))
+        q=layer_block.qb[output_index]
+        zhat=layer_block.zhat[output_index]
+        z=layer_block.z[output_index]
+        layer_block.c1[output_index]=z>=a*zhat
+        layer_block.c2[output_index]=z>=zhat
+        layer_block.c3[output_index]=z<=zhat-(1-a)*lb*(1-q)
+        layer_block.c4[output_index]=z<=a*zhat+(1-a)*ub*q
+
+def bigm_para_relu_activation_constraint(net_block, net, layer_block, layer):
+    #instantiate
+    layer_block.qb=pyo.Var(layer.output_indexes,within=pyo.Binary)
+    layer_block.c1=pyo.Constraint(layer.output_indexes)
+    layer_block.c2=pyo.Constraint(layer.output_indexes)
+    layer_block.c3=pyo.Constraint(layer.output_indexes)
+    layer_block.c4=pyo.Constraint(layer.output_indexes)
+
+    alph = layer.alpha  # Extract the value of alpha
+
+    count = 0
+    for output_index in layer.output_indexes:
+        a = alph[count]
+        if(a>=0):
+            lb,ub = layer_block.zhat[output_index].bounds
+            layer_block.z[output_index].setlb(a*lb)
+            layer_block.z[output_index].setub(ub)
+        else:
+            lb,ub = layer_block.zhat[output_index].bounds
+            layer_block.z[output_index].setlb(0)
+            layer_block.z[output_index].setub(ub)
+        
+        if(a>=1):
+            q=layer_block.qb[output_index]
+            zhat=layer_block.zhat[output_index]
+            z=layer_block.z[output_index]
+            print(count,ub,lb,zhat,q,a)
+            layer_block.c1[output_index]=z>=a*zhat+(1-a)*ub*q
+            layer_block.c2[output_index]=z>=zhat-lb*(1-a)*(1-q)
+            layer_block.c3[output_index]=z<=zhat
+            layer_block.c4[output_index]=z<=a*zhat
+
+        else:
+            q=layer_block.qb[output_index]
+            zhat=layer_block.zhat[output_index]
+            z=layer_block.z[output_index]
+            print(count,ub,lb,zhat,q,a)
+            layer_block.c1[output_index]=z<=a*zhat+(1-a)*ub*q
+            layer_block.c2[output_index]=z<=zhat-lb*(1-a)*(1-q)
+            layer_block.c3[output_index]=z>=zhat
+            layer_block.c4[output_index]=z>=a*zhat
+
+        # else:
+        #     lb,ub = layer_block.zhat[output_index].bounds
+        #     layer_block.z[output_index].setlb(0)
+        #     layer_block.z[output_index].setub(max(a*lb,ub))
+        #     q=layer_block.qb[output_index]
+        #     zhat=layer_block.zhat[output_index]
+        #     z=layer_block.z[output_index]
+        #     print(count,ub,lb,zhat,q,a)
+        #     layer_block.c1[output_index]=z>=a*(zhat)
+        #     layer_block.c2[output_index]=z>=zhat-lb*(1-a)*(1-q)
+        #     layer_block.c3[output_index]=z<=zhat
+        #     layer_block.c4[output_index]=z<=a*(zhat-ub*(1-a**-1)*q)
+        count+=1
+        
 
 class ComplementarityReLUActivation:
     r"""

@@ -38,7 +38,6 @@ def full_space_dense_layer(net_block, net, layer_block, layer):
 
         return layer_block.zhat[output_index] == expr
 
-
 def full_space_conv2d_layer(net_block, net, layer_block, layer):
     r"""
     Add full-space formulation of the 2-D convolutional layer to the block

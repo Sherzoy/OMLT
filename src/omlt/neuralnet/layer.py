@@ -203,8 +203,117 @@ class DenseLayer(Layer):
         y = np.reshape(y, tuple(self.output_size))
         assert y.shape == tuple(self.output_size)
         return y
+    
+class LeakyDenseLayer(DenseLayer):
+    """
+    Leaky layer implementing `output = activation(dot(input, weights) + biases)`.
+    along with an alpha value for alpha
 
+    Parameters
+    ----------
+    input_size : tuple
+        the size of the input.
+    output_size : tuple
+        the size of the output.
+    weight : matrix-like
+        the weight matrix.
+    biases : array-like
+        the biases.
+    activation : str or None
+        activation function name
+    input_index_mapper : IndexMapper or None
+        map indexes from this layer index to the input layer index size
+    alpha : int
+        alpha value for function
+    """
 
+    def __init__(self, input_size, output_size, weights, biases,*, activation=None, input_index_mapper=None,alpha=None):
+        super().__init__(input_size, output_size,weights,biases, activation=activation, input_index_mapper=input_index_mapper)
+        self.__weights = weights
+        self.__biases = biases
+        self.__alpha = alpha
+
+    @property
+    def weights(self):
+        """Return the matrix of node weights"""
+        return self.__weights
+
+    @property
+    def biases(self):
+        """Return the vector of node biases"""
+        return self.__biases
+    
+    @property
+    def alpha(self):
+        """Return the value of alpha"""
+        return self.__alpha
+
+    def __str__(self):
+        return (
+            f"DenseLayer(input_size={self.input_size}, output_size={self.output_size})"
+        )
+
+    def _eval(self, x):
+        y = np.dot(x, self.__weights) + self.__biases
+        y = np.reshape(y, tuple(self.output_size))
+        assert y.shape == tuple(self.output_size)
+        return y
+
+class PReLUDenseLayer(DenseLayer):
+    """
+    Leaky layer implementing `output = activation(dot(input, weights) + biases)`.
+    along with an alpha value for alpha
+
+    Parameters
+    ----------
+    input_size : tuple
+        the size of the input.
+    output_size : tuple
+        the size of the output.
+    weight : matrix-like
+        the weight matrix.
+    biases : array-like
+        the biases.
+    activation : str or None
+        activation function name
+    input_index_mapper : IndexMapper or None
+        map indexes from this layer index to the input layer index size
+    alpha : matrix-like
+        alpha values for function
+    """
+
+    def __init__(self, input_size, output_size, weights, biases,*, activation=None, input_index_mapper=None,alphas=None):
+        super().__init__(input_size, output_size,weights,biases, activation=activation, input_index_mapper=input_index_mapper)
+        self.__weights = weights
+        self.__biases = biases
+        self.__alpha = alphas
+
+    @property
+    def weights(self):
+        """Return the matrix of node weights"""
+        return self.__weights
+
+    @property
+    def biases(self):
+        """Return the vector of node biases"""
+        return self.__biases
+    
+    @property
+    def alpha(self):
+        """Return the vector of node biases"""
+        return self.__alpha
+
+    def __str__(self):
+        return (
+            f"DenseLayer(input_size={self.input_size}, output_size={self.output_size})"
+        )
+
+    def _eval(self, x):
+        y = np.dot(x, self.__weights) + self.__biases
+        y = np.reshape(y, tuple(self.output_size))
+        assert y.shape == tuple(self.output_size)
+        return y
+    
 class Layer2D(Layer):
     """
     Abstract two-dimensional layer that downsamples values in a kernel to a single value.
