@@ -13,6 +13,7 @@ from omlt.neuralnet.activations import ComplementarityReLUActivation
 from omlt.io.keras import keras_reader
 
 df = pd.read_csv("sin_quadratic.csv",index_col=[0])
+
 #retrieve input 'x' and output 'y' from the dataframe
 x = df["x"]
 y = df["y"]

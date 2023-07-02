@@ -33,6 +33,7 @@ def full_space_dense_layer(net_block, net, layer_block, layer):
         expr += layer.biases[output_index[-1]]
 
         lb, ub = compute_bounds_on_expr(expr)
+
         layer_block.zhat[output_index].setlb(lb)
         layer_block.zhat[output_index].setub(ub)
 

@@ -80,10 +80,11 @@ def bigm_leaky_relu_activation_constraint(net_block, net, layer_block, layer):
     
     # Extract the value of alpha
     a = layer.alpha
-    
+
     # integrate
     for output_index in layer.output_indexes:
         lb,ub = layer_block.zhat[output_index].bounds
+        assert(lb<=ub)
         layer_block.z[output_index].setlb(max(a*lb,lb))
         layer_block.z[output_index].setub(max(a*ub,ub))
         q=layer_block.qb[output_index]
@@ -103,16 +104,17 @@ def bigm_para_relu_activation_constraint(net_block, net, layer_block, layer):
     layer_block.c4=pyo.Constraint(layer.output_indexes)
 
     alph = layer.alpha  # Extract the value of alpha
-
     count = 0
     for output_index in layer.output_indexes:
-        a = alph[count]
+        a = alph[count]     
         if(a>=0):
             lb,ub = layer_block.zhat[output_index].bounds
+            assert(lb<=ub)
             layer_block.z[output_index].setlb(a*lb)
             layer_block.z[output_index].setub(ub)
         else:
             lb,ub = layer_block.zhat[output_index].bounds
+            assert(lb<=ub)
             layer_block.z[output_index].setlb(0)
             layer_block.z[output_index].setub(ub)
         
@@ -120,7 +122,6 @@ def bigm_para_relu_activation_constraint(net_block, net, layer_block, layer):
             q=layer_block.qb[output_index]
             zhat=layer_block.zhat[output_index]
             z=layer_block.z[output_index]
-            print(count,ub,lb,zhat,q,a)
             layer_block.c1[output_index]=z>=a*zhat+(1-a)*ub*q
             layer_block.c2[output_index]=z>=zhat-lb*(1-a)*(1-q)
             layer_block.c3[output_index]=z<=zhat
@@ -130,24 +131,11 @@ def bigm_para_relu_activation_constraint(net_block, net, layer_block, layer):
             q=layer_block.qb[output_index]
             zhat=layer_block.zhat[output_index]
             z=layer_block.z[output_index]
-            print(count,ub,lb,zhat,q,a)
             layer_block.c1[output_index]=z<=a*zhat+(1-a)*ub*q
             layer_block.c2[output_index]=z<=zhat-lb*(1-a)*(1-q)
             layer_block.c3[output_index]=z>=zhat
             layer_block.c4[output_index]=z>=a*zhat
 
-        # else:
-        #     lb,ub = layer_block.zhat[output_index].bounds
-        #     layer_block.z[output_index].setlb(0)
-        #     layer_block.z[output_index].setub(max(a*lb,ub))
-        #     q=layer_block.qb[output_index]
-        #     zhat=layer_block.zhat[output_index]
-        #     z=layer_block.z[output_index]
-        #     print(count,ub,lb,zhat,q,a)
-        #     layer_block.c1[output_index]=z>=a*(zhat)
-        #     layer_block.c2[output_index]=z>=zhat-lb*(1-a)*(1-q)
-        #     layer_block.c3[output_index]=z<=zhat
-        #     layer_block.c4[output_index]=z<=a*(zhat-ub*(1-a**-1)*q)
         count+=1
         
 

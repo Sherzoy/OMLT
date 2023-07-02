@@ -159,7 +159,6 @@ def _build_neural_network_formulation(
     """
     net = network_structure
     layers = list(net.layers)
-    print(layers)
 
     block.layers = pyo.Set(initialize=[id(layer) for layer in layers], ordered=True)
 
